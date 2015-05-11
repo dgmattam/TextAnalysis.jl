@@ -31,13 +31,13 @@ type Stemmer
     alg::String
     enc::String
 
-    function Stemmer(stemmer_type::String, charenc::String=UTF_8)
+    #=function Stemmer(stemmer_type::String, charenc::String=UTF_8)
         cptr = ccall((:sb_stemmer_new, _libsb), Ptr{Void}, (Ptr{Uint8}, Ptr{Uint8}), bytestring(stemmer_type), bytestring(charenc))
         (C_NULL == cptr) && error("error creating stemmer of type $(stemmer_type) for $(charenc) encoding")
         stm = new(cptr, stemmer_type, charenc)
         finalizer(stm, release)
         stm
-    end
+    end=#
 end
 
 show(io::IO, stm::Stemmer) = println(io, "Stemmer algorithm:$(stm.alg) encoding:$(stm.enc)")
@@ -70,16 +70,17 @@ end
 function stemmer_for_document(d::AbstractDocument)
     langtype = language(d)
     alg = "porter"
-    if langtype == EnglishLanguage 
+    if langtype == EnglishLanguage
         alg = "english"
     end
     Stemmer(alg)
 end
 
 function stem!(d::AbstractDocument)
-    stemmer = stemmer_for_document(d)
+   #=stemmer = stemmer_for_document(d)
     stem!(stemmer, d)
-    release(stemmer)
+    release(stemmer)=#
+    error("Not Implemented")
 end
 
 function stem!(stemmer::Stemmer, d::FileDocument)
@@ -90,13 +91,13 @@ function stem!(stemmer::Stemmer, d::StringDocument)
     tokens = TextAnalysis.tokenize(language(d), d.text)
     stemmed = convert(Array{UTF8String, 1}, stem(stemmer, tokens))
     d.text = join(stemmed, ' ')
-    nothing 
+    nothing
 end
 
 function stem!(stemmer::Stemmer, d::TokenDocument)
     d.tokens = convert(Array{UTF8String, 1}, stem(stemmer, d.tokens))
-end 
-    
+end
+
 function stem!(stemmer::Stemmer, d::NGramDocument)
     for token in keys(d.ngrams)
         new_token = stem(stemmer, token)
